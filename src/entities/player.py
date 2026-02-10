@@ -1,6 +1,8 @@
 import pygame
 
 MAX_SPEED = 30
+PLAYER_1 = "player_1"
+PLAYER_2 = "player_2"
 
 class Player(pygame.sprite.Sprite):
     def __init__(self, is_player2: bool, keybindings: dict, field_dimensions: tuple):
@@ -10,14 +12,14 @@ class Player(pygame.sprite.Sprite):
         self.image = pygame.image.load('assets/graphics/padel.png').convert_alpha()
         self.is_player2 = is_player2
         if self.is_player2:
-            self.name = "Player 2"
+            self.name = PLAYER_2
             self.starting_position = (self.field_x[1] - 20,
                 (self.field_y[1] - self.field_y[0]) / 2 + self.field_y[0])
             self.rect = self.image.get_rect(
                 center=self.starting_position
             )
         else:
-            self.name = "Player 1"
+            self.name = PLAYER_1
             self.starting_position = (self.field_x[0] + 20,
                 (self.field_y[1] - self.field_y[0]) / 2 + self.field_y[0])
             self.rect = self.image.get_rect(
@@ -58,10 +60,16 @@ class Player(pygame.sprite.Sprite):
         )
         self.speed = 0
 
+    def serve_position(self, ball_width) -> tuple:
+        if self.name == PLAYER_1:
+            return (self.rect.midright[0] + (ball_width // 2), self.rect.midleft[1])
+        else:
+            return (self.rect.midleft[0] - (ball_width // 2), self.rect.midleft[1])
+
 
 class PlayerNPC(Player):
-    def __init__(self, field_dimentions: tuple):
-        super().__init__(True, {"up": 0, "down":0}, field_dimentions)
+    def __init__(self, is_player2: bool, field_dimentions: tuple):
+        super().__init__(is_player2, {"up": 0, "down":0}, field_dimentions)
         self.name = "NPC - " + super().__str__()
 
     def NPCmovement(self, ball_center):
