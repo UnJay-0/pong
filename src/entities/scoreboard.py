@@ -1,10 +1,17 @@
+import os
 import pygame
+from src.utils.utils import FILE_NAME_SEPARATOR
 BEST_OF_THREE = 3
 BEST_OF_FIVE = 5
 BEST_OF_SEVEN = 7
+WIN_STATE_FACTOR = 2
+ACE = "ace"
+SCORE = "score"
+WIN = "win"
+MESSAGES = [ACE, SCORE, WIN]
 
 class Scoreboard:
-    def __init__(self, best_of: int):
+    def __init__(self, best_of: int, field_dimensions):
         self.set_score = [0, 0]
         self.match_score = [0, 0]
         self.matches = best_of
@@ -15,26 +22,37 @@ class Scoreboard:
             pygame.image.load("assets/graphics/scoreboard_back.png").convert_alpha(),
             1/2)
         self.last_hit = 0
+        self.hit_counter = 0
+        self.message = MessageEvent((field_dimensions[0][1]//2,
+            field_dimensions[1][1]//2))
 
+    def increase_hit_counter(self):
+        self.hit_counter +=1
 
     def set_win_state(self):
-        if self.set_score[0] - self.set_score[1] >= 2 and self.set_score[0] >= 2:
+        if self.set_score[0] - self.set_score[1] >= WIN_STATE_FACTOR and self.set_score[0] >= WIN_STATE_FACTOR:
             return 0
-        if self.set_score[1] - self.set_score[0] >= 2 and self.set_score[1] >= 2:
+        if self.set_score[1] - self.set_score[0] >= WIN_STATE_FACTOR and self.set_score[1] >= WIN_STATE_FACTOR:
             return 1
         return -1
 
     def match_win_state(self):
-        if self.match_score[0] > (self.matches // 2):
+        if self.match_score[0] > (self.matches // WIN_STATE_FACTOR):
             return 0
-        if self.match_score[1] > (self.matches // 2):
+        if self.match_score[1] > (self.matches // WIN_STATE_FACTOR):
             return 1
         return -1
 
-    def run_animation(self):
-        pass
+    def is_animating(self):
+        return self.message.visible
 
     def update_score(self, player: int):
+        self.message.reset()
+        self.message.set_visibility(True)
+        if self.hit_counter == 1:
+            self.message.set_message(ACE)
+        else:
+            self.message.set_message(SCORE, player)
         self.set_score[player] += 1
         self.set_numbers[player].next()
         set_win_state = self.set_win_state()
@@ -42,12 +60,17 @@ class Scoreboard:
             self.match_score[set_win_state] += 1
             self.match_numbers[player].next()
             self.reset_set()
+            if self.match_win_state() != -1:
+                self.message.set_message(WIN, player)
 
     def update(self):
         for number in self.set_numbers:
             number.update()
         for number in self.match_numbers:
             number.update()
+        if not self.message.message_animation_status():
+            self.message.set_visibility(False)
+        self.message.update()
 
     def reset_set(self):
         self.set_score = [0, 0]
@@ -57,10 +80,12 @@ class Scoreboard:
     def reset(self):
         self.reset_set()
         self.match_score = [0, 0]
+        self.message.reset()
+        self.hit_counter = 0
 
     def draw(self, screen: pygame.Surface):
+        self.message.render(screen)
         screen.blit(self.background, (227, 13))
-
         for number in self.set_numbers:
             number.render(screen)
         for number in self.match_numbers:
@@ -125,6 +150,9 @@ class Digit(pygame.sprite.Sprite):
     def get_position(self):
         return self.rect.topleft
 
+    def set_number(self, number:int):
+        self.current_digit = number
+
     def next(self) -> int:
         self.start_flip()
         self.previous_digit = self.current_digit
@@ -152,9 +180,9 @@ class Digit(pygame.sprite.Sprite):
                 self.is_animating = False
                 self.current_frame = 0
 
-    def render(self, screen: pygame.Surface):
+    def render(self, surface: pygame.Surface):
         if not self.is_animating:
-            screen.blit(self.digits[self.current_digit], self.rect.topleft)
+            surface.blit(self.digits[self.current_digit], self.rect.topleft)
         else:
             flip_sprite = self.flip_frames[int(self.current_frame)]
             result = self.create_split_digit(
@@ -162,7 +190,7 @@ class Digit(pygame.sprite.Sprite):
                 self.digits[self.current_digit],
                 flip_sprite
             )
-            screen.blit(result, self.rect.topleft)
+            surface.blit(result, self.rect.topleft)
 
     def create_split_digit(self, previous, current, flip_sprite):
         width, height = previous.get_size()
@@ -196,3 +224,52 @@ class Digit(pygame.sprite.Sprite):
 
     def __str__(self):
         return f"index: {self.current_digit}"
+
+
+class MessageEvent(pygame.sprite.Sprite):
+    def __init__(self, position: tuple):
+        self.visible = False
+        self.pixel_size = -10
+        self.position = position
+        self.messages = {}
+        path = "assets/graphics/event_messages/"
+        event_messages = os.listdir(path)
+        for message in event_messages:
+            name = message.split(FILE_NAME_SEPARATOR)[0]
+            if name in MESSAGES:
+                self.messages[name] = pygame.image.load(path + message).convert_alpha()
+
+        self.player_numbers = [Digit((400, 230)), Digit((400, 230))]
+        self.player_numbers[0].set_number(1)
+        self.player_numbers[1].set_number(2)
+
+    def set_visibility(self, is_visible: bool):
+        self.visible = is_visible
+
+    def message_animation_status(self):
+        return self.pixel_size > -10
+
+    def set_message(self, message: str, player_number: int=-1):
+        self.image = self.messages[message].copy()
+        if player_number != -1:
+            self.player_numbers[player_number].render(self.image)
+        self.rect = self.image.get_rect(center=self.position)
+
+
+    def render(self, surface: pygame.Surface):
+        if self.visible:
+            background = pygame.transform.box_blur(surface, 5)
+            if self.pixel_size >= 1:
+                pixelated_message = pygame.transform.pixelate(self.image, int(self.pixel_size))
+                surface.blit(background, (0,0))
+                surface.blit(pixelated_message, self.rect.topleft)
+            else:
+                surface.blit(background, (0,0))
+                surface.blit(self.image, self.rect.topleft)
+
+    def reset(self):
+        self.pixel_size = 10
+
+    def update(self):
+        if self.visible:
+            self.pixel_size -= 0.2

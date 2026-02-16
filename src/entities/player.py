@@ -1,8 +1,12 @@
+import random
 import pygame
 
 MAX_SPEED = 30
 PLAYER_1 = "player_1"
 PLAYER_2 = "player_2"
+UP="up"
+DOWN="down"
+STAY="stay"
 
 class Player(pygame.sprite.Sprite):
     def __init__(self, is_player2: bool, keybindings: dict, field_dimensions: tuple):
@@ -27,8 +31,8 @@ class Player(pygame.sprite.Sprite):
             )
         self.speed = 0
         self.can_move = False
-        self.up = keybindings["up"]
-        self.down = keybindings['down']
+        self.up = keybindings[UP]
+        self.down = keybindings[DOWN]
 
     def movement(self):
         keys = pygame.key.get_pressed()
@@ -69,18 +73,34 @@ class Player(pygame.sprite.Sprite):
 
 class PlayerNPC(Player):
     def __init__(self, is_player2: bool, field_dimentions: tuple):
-        super().__init__(is_player2, {"up": 0, "down":0}, field_dimentions)
+        super().__init__(is_player2, {UP: 0, DOWN:0}, field_dimentions)
         self.name = "NPC - " + super().__str__()
+        self.is_serving = False
 
     def NPCmovement(self, ball_center):
-        if self.can_move:
+        if self.is_serving:
+            movement_possibilities = [STAY]
+            if self.rect.top > self.field_y[0] + 50:
+                movement_possibilities.extend([UP, UP])
+            if self.rect.bottom < self.field_y[1] - 50:
+                movement_possibilities.extend([DOWN, DOWN])
+            movement = random.choice(movement_possibilities)
+            if movement == UP:
+                self.speed -=3
+            elif movement == DOWN:
+                self.speed +=3
+        elif self.can_move:
             if ball_center[1] > self.rect.bottom:
                 self.speed +=2
-                return
-            if ball_center[1] < self.rect.top:
+            elif ball_center[1] < self.rect.top:
                 self.speed -=2
-                return
-        self.speed = 0
+            else:
+                self.speed = 0
+        else:
+            self.speed = 0
+
+    def serving(self, is_serving: bool):
+        self.is_serving = is_serving
 
     def update(self, ball_center):
         self.NPCmovement(ball_center)
