@@ -18,6 +18,13 @@ DEFAULT_SETTINGS = {
         "second_player": {
             "up": pygame.K_UP,
             "down": pygame.K_DOWN
+        },
+        "ui_movement": {
+            "up": pygame.K_UP,
+            "down": pygame.K_DOWN,
+            "left": pygame.K_LEFT,
+            "right": pygame.K_RIGHT,
+            "confirm": pygame.K_KP_ENTER
         }
     },
 }

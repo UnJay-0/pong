@@ -1,12 +1,10 @@
 import random
 import pygame
+from src.utils.constants import UP, DOWN, STAY
 
 MAX_SPEED = 30
 PLAYER_1 = "player_1"
 PLAYER_2 = "player_2"
-UP="up"
-DOWN="down"
-STAY="stay"
 
 class Player(pygame.sprite.Sprite):
     def __init__(self, is_player2: bool, keybindings: dict, field_dimensions: tuple):

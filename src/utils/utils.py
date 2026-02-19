@@ -1,1 +1,0 @@
-FILE_NAME_SEPARATOR = "_"

@@ -1,6 +1,7 @@
 import pygame
 from math import cos, sin, atan2, pi
 from .player import Player
+from random import randint
 
 HOLDING_STATE = 0
 PLAYING_STATE = 1
@@ -12,6 +13,8 @@ BALL_STATES = [HOLDING_STATE, PLAYING_STATE, GOING_OUT_STATE, OUT_STATE]
 class Ball(pygame.sprite.Sprite):
     def __init__(self, field_dimensions: tuple):
         super().__init__()
+        self.sounds = [pygame.mixer.Sound(f'assets/audio/ping_pong_sound_{i}.mp3')
+            for i in range(8)]
         self.image = pygame.image.load('assets/graphics/ball.png').convert_alpha()
         self.state = HOLDING_STATE
         self.magnitude = 10
@@ -60,6 +63,11 @@ class Ball(pygame.sprite.Sprite):
         self.direction = Ball.adjust_direction(atan2(res[1], res[0]))
         if self.state == HOLDING_STATE:
             self.state +=1
+        self.sound_effect()
+
+    def sound_effect(self):
+        i = randint(0, len(self.sounds)-1)
+        self.sounds[i].play()
 
     @staticmethod
     def adjust_direction(radians: float) -> float:

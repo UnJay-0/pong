@@ -1,6 +1,6 @@
 import os
 import pygame
-from src.utils.utils import FILE_NAME_SEPARATOR
+from src.utils.constants import FILE_NAME_SEPARATOR
 BEST_OF_THREE = 3
 BEST_OF_FIVE = 5
 BEST_OF_SEVEN = 7
@@ -68,7 +68,8 @@ class Scoreboard:
             number.update()
         for number in self.match_numbers:
             number.update()
-        if not self.message.message_animation_status():
+        if (not self.message.message_animation_status()
+            and self.message.current != WIN):
             self.message.set_visibility(False)
         self.message.update()
 
@@ -80,6 +81,8 @@ class Scoreboard:
     def reset(self):
         self.reset_set()
         self.match_score = [0, 0]
+        for number in self.match_numbers:
+            number.reset()
         self.message.reset()
         self.hit_counter = 0
 
@@ -232,6 +235,7 @@ class MessageEvent(pygame.sprite.Sprite):
         self.pixel_size = -10
         self.position = position
         self.messages = {}
+        self.current = ""
         path = "assets/graphics/event_messages/"
         event_messages = os.listdir(path)
         for message in event_messages:
@@ -250,6 +254,7 @@ class MessageEvent(pygame.sprite.Sprite):
         return self.pixel_size > -10
 
     def set_message(self, message: str, player_number: int=-1):
+        self.current = message
         self.image = self.messages[message].copy()
         if player_number != -1:
             self.player_numbers[player_number].render(self.image)
@@ -269,6 +274,7 @@ class MessageEvent(pygame.sprite.Sprite):
 
     def reset(self):
         self.pixel_size = 10
+        self.current = ""
 
     def update(self):
         if self.visible:
