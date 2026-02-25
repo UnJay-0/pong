@@ -4,7 +4,7 @@ from src.utils.constants import UP, DOWN
 START_GAME = "Start Game"
 PAUSE = "Pause Game"
 RESTART_GAME = "Reset Game"
-SETTINGS = "Settings"
+GAME_SETTINGS = "Confirm"
 EXIT_GAME = "Leave"
 
 
@@ -27,17 +27,22 @@ class Menu():
 
     def check_highlight(self, mouse_pos:tuple):
         new_cursor = self.hover_highlight(mouse_pos)
-        if new_cursor != None and new_cursor != self.cursor:
+        if new_cursor != None:
+            self.check_hover_sound(new_cursor)
             self.highlight(new_cursor)
             return
         new_cursor = self.selection_highlight()
-        if new_cursor != None and new_cursor != self.cursor:
+        if new_cursor != None:
+            self.check_hover_sound(new_cursor)
             self.highlight(new_cursor)
+
+    def check_hover_sound(self, new_cursor):
+        if new_cursor != None and new_cursor != self.cursor:
+            self.hover_sound.play()
 
 
     def highlight(self, new_cursor: int):
         self.cursor = new_cursor
-        self.hover_sound.play()
         self.buttons[self.cursor].highlight(True)
         for i in range(len(self.buttons)):
             if i != self.cursor:
@@ -49,7 +54,7 @@ class Menu():
             self.mouse_last_pos = mouse_pos
         if self.mouse_control:
             for button in self.buttons:
-                if button.check_highlight(mouse_pos):
+                if button.check_position(mouse_pos):
                     return self.buttons.index(button)
 
     def selection_highlight(self):
@@ -64,7 +69,7 @@ class Menu():
     def check_press(self, point) -> str:
         if self.is_visible:
             for i in range(len(self.buttons)):
-                if self.buttons[i].check_press(point):
+                if self.buttons[i].check_position(point):
                     return self.press()
         return ""
 
@@ -80,7 +85,8 @@ class Menu():
     def render(self, surface: pygame.Surface):
         if self.is_visible:
             background = pygame.transform.box_blur(surface, 10)
-            background.blit(self.logo, self.logo_position)
+            if self.logo != None:
+                background.blit(self.logo, self.logo_position)
             for button in self.buttons:
                 button.draw(background)
             surface.blit(background, (0,0))
@@ -102,7 +108,7 @@ class InGameMenu(Menu):
         self.pause_button = PauseButton((765, 40))
 
     def check_press(self, point) -> str:
-        if self.pause_button.check_press(point):
+        if self.pause_button.check_position(point):
             self.pause_button.press()
             return PAUSE
         return super().check_press(point)
@@ -143,9 +149,8 @@ class Button(pygame.sprite.Sprite):
         self.frame_index = 0
         self.is_animating = False
         self.animation_direction = +1
-        self.is_visible = False
 
-    def check_highlight(self, point) -> bool:
+    def check_position(self, point) -> bool:
         return self.rect.collidepoint(point)
 
     def highlight(self, to_highlight: bool):
@@ -154,9 +159,6 @@ class Button(pygame.sprite.Sprite):
                 self.frame_index = 1
             else:
                 self.frame_index = 0
-
-    def check_press(self, point) -> bool:
-        return self.rect.collidepoint(point)
 
     def press(self):
         self.is_animating = True
@@ -181,6 +183,33 @@ class Button(pygame.sprite.Sprite):
         text_rect = self.text.get_rect(center=self.position)
         surface.blit(self.image, self.rect.topleft)
         surface.blit(self.text, text_rect.topleft)
+
+class SettingButton(Button):
+    def __init__(self, position, is_left=True):
+        self.position = position
+        if is_left:
+            self.images = [
+                pygame.image.load(f"assets/graphics/settings_button/settings_button{i}.png")
+                for i in range(5)
+            ]
+        else:
+            self.images = [
+                pygame.transform.flip(
+                    pygame.image.load(f"assets/graphics/settings_button/settings_button{i}.png"), True, False)
+                for i in range(5)
+            ]
+        self.image = self.images[0].copy()
+        self.rect = self.image.get_rect(topleft=position)
+        self.frame_index = 0
+        self.is_animating = False
+        self.animation_direction = +1
+        self.is_visible = False
+
+    def draw(self, surface: pygame.Surface):
+        self.image = self.images[int(self.frame_index)].copy()
+        self.rect = self.image.get_rect(topleft=self.position)
+        surface.blit(self.image, self.rect.topleft)
+
 
 class PauseButton(Button):
     def __init__(self, position):

@@ -2,8 +2,9 @@ import pygame
 from sys import exit
 from src.entities.player import Player, PlayerNPC
 from src.entities.ball import PLAYING_STATE, Ball, OUT_STATE, HOLDING_STATE
-from src.entities.scoreboard import Scoreboard, BEST_OF_THREE
+from src.entities.scoreboard import Scoreboard
 import src.entities.ui as ui
+from src.game_settings import GameSettings
 from src.settings import load_settings
 from random import randint
 from src import game_status as status
@@ -21,35 +22,48 @@ class Game:
         self.previous_status = status.PAUSED
         self.start_menu = ui.Menu(
             self.settings["keybindings"]["ui_movement"],
-            [ui.START_GAME, ui.SETTINGS, ui.EXIT_GAME],
+            [ui.START_GAME, ui.EXIT_GAME],
         )
         self.start_menu.display(True)
         self.in_game_menu = ui.InGameMenu(
             self.settings["keybindings"]["ui_movement"],
-            [ui.RESTART_GAME, ui.SETTINGS, ui.EXIT_GAME]
+            [ui.RESTART_GAME, ui.EXIT_GAME]
         )
+        self.game_settings = GameSettings(self.settings["keybindings"]["ui_movement"])
         self.current_menu = self.start_menu
+        self.players = []
 
-        self.players = [
-            pygame.sprite.GroupSingle(Player(
-                False,
-                self.settings["keybindings"]["first_player"],
-                self.settings["field_dimensions"])),
-            pygame.sprite.GroupSingle(PlayerNPC(
-                True,
-                self.settings["field_dimensions"]))
-        ]
         self.ball = pygame.sprite.GroupSingle(
             Ball(
                 self.settings["field_dimensions"]),
         )
         self.last_hit = randint(0,1)
         self.serving = self.last_hit
-        self.serving_movement(True)
-        self.ball.sprite.serve_positioning(self.players[self.serving].sprite.serve_position(self.ball.sprite.get_size()[1]))
-        self.scoreboard = Scoreboard(BEST_OF_THREE, self.settings["field_dimensions"])
         self.serving_timer = pygame.USEREVENT + 1
         pygame.time.set_timer(self.serving_timer, 0)
+
+    def set_game_settings(self, settings):
+        self.players = [
+            pygame.sprite.GroupSingle(Player(
+                False,
+                self.settings["keybindings"]["first_player"],
+                self.settings["field_dimensions"]))
+        ]
+        if settings["players"] > 1:
+            self.players.append(
+                        pygame.sprite.GroupSingle(Player(
+                            True,
+                            self.settings["keybindings"]["second_player"],
+                            self.settings["field_dimensions"])))
+        else:
+            self.players.append(
+                        pygame.sprite.GroupSingle(PlayerNPC(
+                            True,
+                            self.settings["field_dimensions"]))
+                    )
+        self.serving_movement(True)
+        self.ball.sprite.serve_positioning(self.players[self.serving].sprite.serve_position(self.ball.sprite.get_size()[1]))
+        self.scoreboard = Scoreboard(settings["best_of"], settings["set_points"], self.settings["field_dimensions"])
 
     def handle_events(self):
         for event in pygame.event.get():
@@ -85,15 +99,19 @@ class Game:
     def menu_actions(self, action):
         match action:
             case ui.START_GAME:
-                self.game_status = status.PLAYING
                 self.current_menu.display(False)
-                self.current_menu = self.in_game_menu
-                pygame.time.set_timer(self.serving_timer, 3000)
+                self.current_menu = self.game_settings
+                self.current_menu.display(True)
             case ui.RESTART_GAME:
                 self.soft_reset()
                 self.scoreboard.reset()
-            case ui.SETTINGS:
-                pass
+            case ui.GAME_SETTINGS:
+                self.set_game_settings(self.game_settings.get_settings())
+                self.game_status = status.PLAYING
+                self.current_menu.display(False)
+                self.current_menu = self.in_game_menu
+                self.current_menu.display(False)
+                pygame.time.set_timer(self.serving_timer, 3000)
             case ui.EXIT_GAME:
                 if self.game_status == status.START_MENU:
                     pygame.quit()
@@ -137,16 +155,17 @@ class Game:
             self.players[0].update()
             self.players[1].update(self.ball.sprite.rect.center)
             self.ball.update(self.players[self.last_hit].sprite.serve_position(self.ball.sprite.rect.w))
-        self.scoreboard.update()
+        if self.game_status == status.UPDATING_SCORE:
+            self.scoreboard.update()
         self.current_menu.update()
         pygame.display.update()
 
     def render(self):
         self.screen.blit(self.field, (0, 0))
-        self.players[0].draw(self.screen)
-        self.players[1].draw(self.screen)
-        self.ball.draw(self.screen)
         if self.game_status != status.START_MENU:
+            self.players[0].draw(self.screen)
+            self.players[1].draw(self.screen)
+            self.ball.draw(self.screen)
             self.scoreboard.draw(self.screen)
         self.current_menu.render(self.screen)
 

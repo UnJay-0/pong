@@ -11,10 +11,11 @@ WIN = "win"
 MESSAGES = [ACE, SCORE, WIN]
 
 class Scoreboard:
-    def __init__(self, best_of: int, field_dimensions):
+    def __init__(self, best_of: int, set_points: int, field_dimensions):
         self.set_score = [0, 0]
         self.match_score = [0, 0]
         self.matches = best_of
+        self.max_set_points = set_points
         self.set_numbers = [Number([(215, 9), (290, 9)], 2), Number([(424, 9), (499, 9)], 2)]
         self.match_numbers = [Number([(360, 20)], 1, 1/2), Number([(395, 20)], 1, 1/2)]
         self.background = pygame.image.load("assets/graphics/scoreboard_back_v2.png").convert_alpha()
@@ -30,9 +31,9 @@ class Scoreboard:
         self.hit_counter +=1
 
     def set_win_state(self):
-        if self.set_score[0] - self.set_score[1] >= WIN_STATE_FACTOR and self.set_score[0] >= WIN_STATE_FACTOR:
+        if self.set_score[0] - self.set_score[1] >= WIN_STATE_FACTOR and self.set_score[0] >= self.max_set_points:
             return 0
-        if self.set_score[1] - self.set_score[0] >= WIN_STATE_FACTOR and self.set_score[1] >= WIN_STATE_FACTOR:
+        if self.set_score[1] - self.set_score[0] >= WIN_STATE_FACTOR and self.set_score[1] >= self.max_set_points:
             return 1
         return -1
 
@@ -117,6 +118,22 @@ class Number():
                 break
             else:
                 index -= 1
+
+    def set_number(self, number:int):
+        if number == 0:
+            self.digits[0].set_number(number)
+            return
+        digit_index = len(self.digits) -1
+        while(number != 0 or digit_index != -1):
+            number, remainder = divmod(number, 10)
+            self.digits[digit_index].set_number(remainder)
+            digit_index -= 1
+
+    def get_number(self):
+        number = 0
+        for i in range(len(self.digits)):
+            number += self.digits[i].current_digit * ((i * 10) if i != 0 else 1)
+        return number
 
     def update(self):
         for digit in self.digits:
@@ -223,6 +240,8 @@ class Digit(pygame.sprite.Sprite):
 
     def reset(self):
         self.current_digit = 0
+        self.is_animating = False
+        self.current_frame = 0
 
 
     def __str__(self):
@@ -275,6 +294,7 @@ class MessageEvent(pygame.sprite.Sprite):
     def reset(self):
         self.pixel_size = 10
         self.current = ""
+        self.visible = False
 
     def update(self):
         if self.visible:

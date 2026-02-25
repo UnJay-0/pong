@@ -16,10 +16,11 @@ class Player(pygame.sprite.Sprite):
         if self.is_player2:
             self.name = PLAYER_2
             self.starting_position = (self.field_x[1] - 20,
-                (self.field_y[1] - self.field_y[0]) / 2 + self.field_y[0])
+                (self.field_y[1] - self.field_y[0]) // 2 + self.field_y[0])
             self.rect = self.image.get_rect(
                 center=self.starting_position
             )
+
         else:
             self.name = PLAYER_1
             self.starting_position = (self.field_x[0] + 20,
