@@ -12,6 +12,9 @@ from src import game_status as status
 
 class Game:
     def __init__(self):
+        """
+        Initializes the game
+        """
         pygame.display.set_caption('Pong')
         self.settings = load_settings()
         self.field = pygame.image.load('assets/graphics/field.png')
@@ -42,7 +45,21 @@ class Game:
         self.serving_timer = pygame.USEREVENT + 1
         pygame.time.set_timer(self.serving_timer, 0)
 
-    def set_game_settings(self, settings):
+    def set_game_settings(self, settings: dict):
+        """
+        Set the settings for the game:
+            - Number of players
+            - Set points
+            - Match wins
+
+        Parameters
+        ----------
+        settings: dict
+            contains the selected settings for the current game.
+            It must contains the followings keys: players,
+            best_of and set_points
+
+        """
         self.players = [
             pygame.sprite.GroupSingle(Player(
                 False,
@@ -66,6 +83,13 @@ class Game:
         self.scoreboard = Scoreboard(settings["best_of"], settings["set_points"], self.settings["field_dimensions"])
 
     def handle_events(self):
+        """
+        Handles the pygames events, like:
+            - quit
+            - mouse clicks
+            - keystrokes
+            - timers
+        """
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -96,7 +120,20 @@ class Game:
                 self.serving_movement(False)
                 pygame.time.set_timer(self.serving_timer, 0)
 
-    def menu_actions(self, action):
+    def menu_actions(self, action: str):
+        """
+        Performs the requested menu action. The available actions are:
+            - START_GAME
+            - RESTART_GAME
+            - GAME_SETTINGS
+            - EXIT_GAME
+            - PAUSE
+
+        Parameters
+        ----------
+        action: str
+            action to perform
+        """
         match action:
             case ui.START_GAME:
                 self.current_menu.display(False)
@@ -137,20 +174,34 @@ class Game:
                     self.game_status = self.previous_status
 
     def serving_movement(self, is_serving: bool):
+        """
+        Abilitate or disabilitate the serving player to move before serving.
+
+        Parameters
+        ----------
+        is_serving: bool
+            True if the serving player can move
+            False otherwise
+        """
         if type(self.players[self.serving].sprite) == PlayerNPC:
             self.players[self.serving].sprite.serving(is_serving)
         if type(self.players[1-self.serving].sprite) == PlayerNPC:
             self.players[1-self.serving].sprite.serving(False)
 
     def serve(self):
-        other_player = 1 - self.last_hit
-        self.players[other_player].sprite.can_move = True
+        """
+        Makes the serve.
+        """
+        self.players[1 - self.last_hit].sprite.can_move = True
         self.ball.sprite.hit(
             (2*self.ball.sprite.get_ball_vector()[0] * self.last_hit,
                 self.players[self.last_hit].sprite.get_vector()[1]))
         self.scoreboard.increase_hit_counter()
 
     def update(self):
+        """
+        Updates all the elements of the game
+        """
         if self.game_status == status.PLAYING:
             self.players[0].update()
             self.players[1].update(self.ball.sprite.rect.center)
@@ -161,6 +212,9 @@ class Game:
         pygame.display.update()
 
     def render(self):
+        """
+        Render the active elements of the games
+        """
         self.screen.blit(self.field, (0, 0))
         if self.game_status != status.START_MENU:
             self.players[0].draw(self.screen)
@@ -170,6 +224,10 @@ class Game:
         self.current_menu.render(self.screen)
 
     def soft_reset(self):
+        """
+        Soft resets elements of the game.
+        Specifically, the players and the ball.
+        """
         for player in self.players:
             player.sprite.reset()
         self.ball.sprite.reset()
@@ -177,11 +235,13 @@ class Game:
         self.last_hit = self.serving
         self.players[1-self.serving].sprite.can_move = True
         self.players[self.serving].sprite.can_move = False
-        print(f"serving players: {self.players[self.serving].sprite}")
         self.serving_movement(True)
         self.ball.sprite.serve_positioning(self.players[self.serving].sprite.serve_position(self.ball.sprite.get_size()[1]))
 
     def run(self):
+        """
+        Defines the game loop
+        """
         while self.running:
             self.handle_events()
             self.update()

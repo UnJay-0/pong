@@ -5,7 +5,22 @@ from src.entities.ui import Button, Menu, SettingButton
 from src.utils.constants import DOWN, LEFT, RIGHT, UP
 
 class GameSettings(Menu):
-    def __init__(self, keybindings):
+    """
+    UI element that defines the settings for the following game.
+    Makes the player set:
+        - Number of players
+        - Number of points per Set
+        - Number of Matches
+    """
+    def __init__(self, keybindings: dict):
+        """
+        Initialise the GameSetting instance.
+
+        Parameters
+        ----------
+        keybindings: dict
+            controls that allows the menu navigation
+        """
         self.logo = None
         self.background = pygame.image.load('assets/graphics/settings_bg.png')
         self.background_rect = self.background.get_rect(center=(400, 250))
@@ -24,6 +39,14 @@ class GameSettings(Menu):
         ]
 
     def selection_highlight(self):
+        """
+        Select the button to highlight based on the pressed
+        button.
+
+        Returns
+        -------
+        int - cursor of the highlighted button
+        """
         keys = pygame.key.get_just_pressed()
         if keys[self.keybindings[UP]]:
             self.mouse_control = False
@@ -41,6 +64,11 @@ class GameSettings(Menu):
             return self.cursor
 
     def get_settings(self):
+        """
+        Returns
+        -------
+        dict - settings selected by the user.
+        """
         return {
             "players": self.buttons[0].get_value(),
             "best_of": self.buttons[1].get_value(),
@@ -48,6 +76,9 @@ class GameSettings(Menu):
         }
 
     def render(self, surface: pygame.Surface):
+        """
+        Renders the menu for selecting the settings.
+        """
         if self.is_visible:
             screen_background = pygame.transform.box_blur(surface, 10)
             screen_background.blit(self.background, self.background_rect)
@@ -56,7 +87,25 @@ class GameSettings(Menu):
             surface.blit(screen_background, (0,0))
 
 class Selection():
+    """
+    UI element that allows the user to select a
+    number among a set of available options.
+    """
     def __init__(self, reference_pos: tuple, text:str, options:list[int], digits=1):
+        """
+        Initialise the selection options.
+
+        Parameters
+        ----------
+        reference_pos: tuple
+            The position of the menu to use as a reference
+        text: str
+            Text to show on the selection option
+        options: list[int]
+            Set of available options
+        digits: int
+            Max number of digits of the options
+        """
         font = pygame.font.Font("assets/fonts/Jersey15-Regular.ttf", 40)
         self.text = font.render(text, False, "White")
         self.text_rect = self.text.get_rect(topleft=(reference_pos[0]+40, reference_pos[1]+60))
@@ -73,7 +122,22 @@ class Selection():
         self.number.set_number(options[self.option_index])
         self.options = options
 
-    def check_position(self, point) -> bool:
+    def check_position(self, point: tuple) -> bool:
+        """
+        Checks if the position specified by point collide with this
+        selection entity.
+
+        Parameters
+        ----------
+        point: tuple
+            position to check
+
+        Returns
+        -------
+        bool
+            True if the point collide with the selection
+            False otherwise
+        """
         for i in range(len(self.setting_buttons)):
             if self.setting_buttons[i].rect.collidepoint(point):
                 self.setting_buttons_index = i
@@ -82,11 +146,28 @@ class Selection():
                 return True
         return False
 
-    def get_value(self):
+    def get_value(self) -> int:
+        """
+        Get the value selected of this selection
+
+        Returns
+        -------
+        int
+            the value selected
+        """
         return self.number.get_number()
 
 
     def highlight(self, to_highlight: bool):
+        """
+        Highlights or turns off the highlight from the selection object.
+
+        Parameters
+        ----------
+        to_highlight: bool
+            True if the selection has to be highlighted
+            False otherwise
+        """
         if to_highlight:
             self.box_frame_index = 1
             self.setting_buttons[self.setting_buttons_index].highlight(True)
@@ -97,16 +178,30 @@ class Selection():
                button.highlight(False)
 
     def press(self):
+        """
+        Presses the selected button of the selection
+        """
         self.setting_buttons[self.setting_buttons_index].press()
         self.option_index = ((self.option_index + (1 if self.setting_buttons_index else -1))
             % len(self.options))
         self.number.set_number(self.options[self.option_index])
 
     def update(self):
+        """
+        Updates the selection
+        """
         for button in self.setting_buttons:
             button.update()
 
     def draw(self, surface: pygame.Surface):
+        """
+        Draws the selection on the given surface
+
+        Parameters
+        ----------
+        surface: pygame.Surface
+            surface to be drawn over
+        """
         for button in self.setting_buttons:
             button.draw(surface)
         surface.blit(self.box[self.box_frame_index], self.box_rect)

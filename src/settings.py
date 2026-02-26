@@ -1,4 +1,3 @@
-# settings_manager.py
 import json, pygame
 from pathlib import Path
 
@@ -30,6 +29,16 @@ DEFAULT_SETTINGS = {
 }
 
 def load_settings() -> dict:
+    """
+    Loads the settings.
+    If the settings file does not exists or does not contain specific keys
+    those will be overwritten by the default settings.
+
+    Returns
+    -------
+    dict
+        settings for the game and application.
+    """
     SETTINGS_PATH.parent.mkdir(parents=True, exist_ok=True)
     print(f"path: {SETTINGS_PATH}")
     if SETTINGS_PATH.exists():
@@ -42,6 +51,14 @@ def load_settings() -> dict:
         return DEFAULT_SETTINGS.copy()
 
 def save_settings(settings: dict):
+    """
+    Save the settings given.
+
+    Parameters
+    ----------
+    settings: dict
+        settings to be saved
+    """
     SETTINGS_PATH.parent.mkdir(parents=True, exist_ok=True)
     with SETTINGS_PATH.open("w", encoding="utf-8") as f:
         json.dump(settings, f, indent=2)
