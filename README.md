@@ -4,7 +4,13 @@
 This is an attempt to realise a playable game based on the famous Pong, without too much planning or thinking ahead.
 
 The development was fun, challenging and interesting. I had the chance to complete a project and to follow a complete process of implementation, bug fixing and mantainance.
+
 Without any doubt the code implementation and design are not optimal and lacks of organisation and common design pattern, but to see the game work, and actually having fun with it brings me so much satisfaction.
+
+I learned a lot by just creating this "simple" game, like:
+- vectors
+- How important Design Patterns are
+- Be brave and just create
 
 # How To Play
 ## Prerequisite
@@ -17,6 +23,7 @@ Without any doubt the code implementation and design are not optimal and lacks o
 
 # Credits
 Jonathan Junior Agyekum
+
 
 
 
