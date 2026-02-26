@@ -15,7 +15,8 @@ Without any doubt the code implementation and design are not optimal and lacks o
 - Install the required dependancies through the requirements.txt
 - run 'python main.py'
 
-#Credits
+# Credits
 Jonathan Junior Agyekum
+
 
 
